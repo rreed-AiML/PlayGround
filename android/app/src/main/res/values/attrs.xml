@@ -1,6 +1,0 @@
-<resources>
-    <declare-styleable name="AutomaKeyboard">
-        <attr name="keyBackground" format="reference|color" />
-        <attr name="keyTextColor" format="reference|color" />
-    </declare-styleable>
-</resources>

@@ -1,8 +1,0 @@
-<resources>
-    <dimen name="key_height_portrait">56dp</dimen>
-    <dimen name="key_width_standard">10%</dimen>
-    <dimen name="key_width_wide">20%</dimen>
-    <dimen name="key_width_space">30%</dimen>
-    <dimen name="key_margin">4dp</dimen>
-    <dimen name="key_corner_radius">8dp</dimen>
-</resources>
