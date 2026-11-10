@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OmniAutomate — Factory Line Runner</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: #0b0d12;
+    color: #e8ecf2;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    touch-action: none;
+  }
+  #game-container {
+    position: relative;
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  canvas {
+    display: block;
+    background: #12161f;
+    border: 2px solid #2a303c;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.6);
+    max-width: 100%; max-height: 100%;
+  }
+  #ui {
+    position: absolute; top: 14px; left: 0; right: 0;
+    display: flex; justify-content: space-between; padding: 0 20px;
+    pointer-events: none; z-index: 10;
+  }
+  .stat { font-weight: 700; font-size: 18px; letter-spacing: 1px; text-transform: uppercase;
+          text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+  .stat-value { color: #4fc3f7; }
+  #overlay {
+    position: absolute; inset: 0; display: none; flex-direction: column;
+    align-items: center; justify-content: center; background: rgba(8,10,14,0.85);
+    z-index: 20; backdrop-filter: blur(4px);
+  }
+  #overlay.show { display: flex; }
+  #title { font-size: 42px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;
+           margin: 0 0 8px; text-align: center; line-height: 1;
+           background: linear-gradient(90deg, #4fc3f7, #82b1ff);
+           -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  #subtitle { font-size: 16px; color: #9aa3b2; margin-bottom: 24px; text-align: center; }
+  .hint { font-size: 14px; color: #7e8898; margin-top: 16px; }
+  #controls {
+    position: absolute; bottom: 24px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 16px; pointer-events: none; z-index: 10;
+  }
+  .btn {
+    pointer-events: auto; width: 72px; height: 72px; border-radius: 50%;
+    border: 2px solid #2a303c; background: #191f2b; color: #e8ecf2;
+    font-size: 26px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    box-shadow: 0 4px 0 #0f131c; transform: translateY(0);
+  }
+  .btn:active { border-color: #4fc3f7; color: #4fc3f7; transform: translateY(2px); box-shadow: 0 2px 0 #0f131c; }
+  .btn:focus { outline: none; border-color: #4fc3f7; }
+  #restart { position: absolute; bottom: 30px; right: 24px; pointer-events: auto;
+             background: #4fc3f7; color: #0b0d12; border: none; border-radius: 8px;
+             padding: 10px 22px; font-weight: 800; font-size: 14px; text-transform: uppercase;
+             cursor: pointer; z-index: 15; box-shadow: 0 4px 0 #0e6b8c; }
+  #restart:active { transform: translateY(2px); box-shadow: 0 2px 0 #0e6b8c; }
+  @media (max-width: 500px) { #title { font-size: 30px; } .btn { width: 60px; height: 60px; font-size: 22px; } }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <canvas id="game" width="640" height="480"></canvas>
+  <div id="ui">
+    <div class="stat">Defects <span id="defects" class="stat-value">0</span></div>
+    <div class="stat">Score <span id="score" class="stat-value">0</span></div>
+    <div class="stat">Line <span id="line" class="stat-value">1</span></div>
+  </div>
+
+  <div id="controls">
+    <div class="btn" id="btn-left">L</div>
+    <div class="btn" id="btn-jump">J</div>
+    <div class="btn" id="btn-right">R</div>
+  </div>
+
+  <div id="overlay">
+    <div id="title">OMNIAUTOMATE</div>
+    <div id="subtitle">Keep the factory line running</div>
+    <div class="hint">Arrows / WASD move &bull; Space jumps &bull; Tap buttons on mobile</div>
+    <button id="restart">Start line</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const elDefects = document.getElementById('defects');
+  const elScore = document.getElementById('score');
+  const elLine = document.getElementById('line');
+  const overlay = document.getElementById('overlay');
+  const btnRestart = document.getElementById('restart');
+  const btnLeft = document.getElementById('btn-left');
+  const btnJump = document.getElementById('btn-jump');
+  const btnRight = document.getElementById('btn-right');
+
+  // Input state
+  const keys = {};
+  let touchLeft = false, touchRight = false, touchJump = false;
+
+  function press(key) { keys[key] = true; }
+  function release(key) { keys[key] = false; }
+  window.addEventListener('keydown', e => { if(['ArrowLeft','ArrowRight','ArrowUp',' ','Space'].includes(e.key)) e.preventDefault(); press(e.key); });
+  window.addEventListener('keyup', e => release(e.key));
+
+  function bindBtn(el, onDown, onUp) {
+    el.addEventListener('mousedown', e => { e.preventDefault(); onDown(); });
+    el.addEventListener('mouseup', e => { e.preventDefault(); onUp(); });
+    el.addEventListener('mouseleave', e => { e.preventDefault(); onUp(); });
+    el.addEventListener('touchstart', e => { e.preventDefault(); onDown(); }, {passive:false});
+    el.addEventListener('touchend', e => { e.preventDefault(); onUp(); }, {passive:false});
+    el.addEventListener('touchcancel', e => { e.preventDefault(); onUp(); }, {passive:false});
+  }
+  bindBtn(btnLeft,  () => touchLeft = true,  () => touchLeft = false);
+  bindBtn(btnRight, () => touchRight = true, () => touchRight = false);
+  bindBtn(btnJump,  () => touchJump = true,  () => touchJump = false);
+
+  // ---------- Game constants ----------
+  const GROUND_Y = 400;
+  const GRAVITY = 0.9;
+  const JUMP_VELOCITY = -15.5;
+  const MOVE_SPEED = 6.2;
+  const PLAYER_W = 26, PLAYER_H = 30;
+  const OBST_W = 34, OBST_H = 34;
+  const CHIP_W = 18, CHIP_H = 18;
+
+  // ---------- Entities ----------
+  const player = {
+    x: 100, y: GROUND_Y - PLAYER_H, w: PLAYER_W, h: PLAYER_H,
+    vx: 0, vy: 0, grounded: false,
+    color: '#4fc3f7', dir: 1, anim: 0
+  };
+
+  let obstacles = [];   // {x,y,w,h,type:'defect'|'barrier',speed,passed}
+  let chips = [];       // {x,y,w,h,collected}
+  let particles = [];   // {x,y,vx,vy,life,color}
+
+  // ---------- State ----------
+  let running = false;
+  let score = 0;
+  let defects = 0;
+  let line = 1;
+  let frame = 0;
+  let spawnTimer = 0;
+  let baseSpeed = 3.6;
+  let gameSpeed = baseSpeed;
+  let difficulty = 1;
+
+  function reset() {
+    player.x = 100; player.y = GROUND_Y - PLAYER_H; player.vx = 0; player.vy = 0; player.grounded = false;
+    obstacles = []; chips = []; particles = [];
+    score = 0; defects = 0; line = 1; frame = 0; spawnTimer = 0;
+    gameSpeed = baseSpeed; difficulty = 1;
+    updateHud();
+  }
+
+  function updateHud() {
+    elDefects.textContent = defects;
+    elScore.textContent = score;
+    elLine.textContent = line;
+  }
+
+  function spawn() {
+    // Decide what to spawn based on difficulty
+    const roll = Math.random();
+    const isBarrier = roll < 0.25 + difficulty * 0.05;
+    const type = isBarrier ? 'barrier' : 'defect';
+
+    const y = GROUND_Y - OBST_H;
+    const w = isBarrier ? OBST_W * 1.6 : OBST_W;
+    const h = OBST_H;
+    const x = canvas.width + 60;
+
+    obstacles.push({ x, y, w, h, type, speed: gameSpeed, passed: false });
+
+    // Sometimes a chip above the gap
+    if (Math.random() < 0.35) {
+      chips.push({
+        x: x + (w - CHIP_W) / 2, y: y - CHIP_H - 26,
+        w: CHIP_W, h: CHIP_H, collected: false,
+        ty: y - CHIP_H - 26
+      });
+    }
+  }
+
+  function rectOverlap(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function spawnExplosion(x, y, color, count = 10) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 4 + 1;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1.0,
+        color
+      });
+    }
+  }
+
+  function hitDefect() {
+    defects++;
+    score = Math.max(0, score - 40);
+    spawnExplosion(player.x + player.w / 2, player.y + player.h / 2, '#ff6b6b', 14);
+    gameSpeed = Math.max(2.2, gameSpeed - 0.5);
+    updateHud();
+    // slight knockback
+    player.vy = -6;
+    player.x += player.dir * 20;
+  }
+
+  function collectChip(chip) {
+    chip.collected = true;
+    score += 25;
+    spawnExplosion(chip.x + chip.w / 2, chip.y + chip.h / 2, '#ffd93d', 8);
+    updateHud();
+  }
+
+  function gameOver() {
+    running = false;
+    overlay.classList.add('show');
+    document.getElementById('title').textContent = 'LINE HALTED';
+    document.getElementById('subtitle').textContent = `Score ${score}  •  Line ${line}`;
+    btnRestart.textContent = 'Restart line';
+  }
+
+  function update() {
+    if (!running) return;
+    frame++;
+    spawnTimer++;
+    const spawnInterval = Math.max(28, 70 - difficulty * 6);
+    if (spawnTimer >= spawnInterval) {
+      spawn(); spawnTimer = 0;
+    }
+
+    // Player physics
+    const wantLeft = keys['ArrowLeft'] || keys['KeyA'] || keys['a'] || touchLeft;
+    const wantRight = keys['ArrowRight'] || keys['KeyD'] || keys['d'] || touchRight;
+    const wantJump = (keys['ArrowUp'] || keys['KeyW'] || keys['w'] || keys[' '] || touchJump) && player.grounded;
+
+    // Reset jump edge trigger: only jump on fresh press
+    // (track via a frame flag)
+    if (wantJump && !player._justJumped) {
+      player.vy = JUMP_VELOCITY;
+      player.grounded = false;
+      player._justJumped = true;
+      spawnExplosion(player.x + player.w / 2, GROUND_Y, player.color, 4);
+    }
+    if (!wantJump) player._justJumped = false;
+
+    player.vx = 0;
+    if (wantLeft)  { player.vx = -MOVE_SPEED; player.dir = -1; }
+    if (wantRight) { player.vx = MOVE_SPEED;  player.dir = 1; }
+
+    player.vy += GRAVITY;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    // Clamp horizontally
+    if (player.x < 0) player.x = 0;
+    if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+
+    // Ground
+    if (player.y + player.h > GROUND_Y) {
+      player.y = GROUND_Y - player.h;
+      player.vy = 0;
+      player.grounded = true;
+    }
+
+    player.anim += 0.25;
+
+    // Difficulty ramp
+    const targetSpeed = baseSpeed + Math.floor(frame / 600) * 0.35;
+    gameSpeed += (targetSpeed - gameSpeed) * 0.02;
+    difficulty = 1 + Math.floor(frame / 900) * 0.25;
+    if (Math.floor(frame / 900) + 1 !== line) {
+      line = Math.floor(frame / 900) + 1;
+      updateHud();
+    }
+
+    // Update obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      const o = obstacles[i];
+      o.x -= o.speed;
+
+      if (rectOverlap(player, o)) {
+        if (o.type === 'defect') {
+          hitDefect();
+          obstacles.splice(i, 1);
+          if (defects >= 3) gameOver();
+          continue;
+        } else {
+          // barrier: bounce off top, die if hit side while grounded-ish
+          // simple: if player is above top third, land on it; else defect
+          const overlapTop = player.y + player.h - o.y;
+          if (player.vy > 0 && overlapTop > 0 && overlapTop < 22 && player.y + player.h - player.vy <= o.y + 4) {
+            player.y = o.y - player.h;
+            player.vy = 0;
+            player.grounded = true;
+            // ride the barrier
+            player.x += o.speed * 0.5;
+          } else {
+            hitDefect();
+            obstacles.splice(i, 1);
+            if (defects >= 3) gameOver();
+            continue;
+          }
+        }
+      }
+
+      if (o.x + o.w < 0) {
+        if (!o.passed) { score += 10; o.passed = true; updateHud(); }
+        obstacles.splice(i, 1);
+      }
+    }
+
+    // Update chips
+    for (let i = chips.length - 1; i >= 0; i--) {
+      const c = chips[i];
+      c.x -= gameSpeed;
+      c.y = c.ty + Math.sin(frame * 0.15 + c.x) * 4;
+      if (rectOverlap(player, c) && !c.collected) collectChip(c);
+      if (c.x + c.w < 0 || c.collected) chips.splice(i, 1);
+    }
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.22; p.life -= 0.05;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    if (score % 500 < 10 && score > 0) line = Math.floor(frame / 900) + 1;
+    updateHud();
+  }
+
+  // ---------- Render ----------
+  function drawGrid() {
+    const t = frame * 0.8;
+    ctx.strokeStyle = 'rgba(79,195,247,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = (t * 20) % 40; x < canvas.width; x += 40) {
+      ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+    }
+    ctx.stroke();
+  }
+
+  function drawFloor() {
+    ctx.fillStyle = '#1c2330';
+    ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+    ctx.strokeStyle = '#2a303c';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(canvas.width, GROUND_Y); ctx.stroke();
+    // conveyor belt marks
+    ctx.strokeStyle = 'rgba(79,195,247,0.15)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([16 - (frame * 4) % 32, 16]);
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y + 10); ctx.lineTo(canvas.width, GROUND_Y + 10); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawPlayer() {
+    const p = player;
+    ctx.save();
+    ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+    if (p.dir < 0) ctx.scale(-1, 1);
+    // body
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.w / 2 + 3, -p.h / 2 + 4, p.w - 6, p.h - 8);
+    // visor
+    ctx.fillStyle = '#0b0d12';
+    ctx.fillRect(-p.w / 2 + 8, -p.h / 2 + 7, 10, 6);
+    // arm bob
+    const bob = Math.sin(p.anim) * 3;
+    ctx.fillStyle = '#191f2b';
+    ctx.fillRect(p.w / 2 - 2, -p.h / 2 + 10 + bob, 6, 10);
+    ctx.restore();
+  }
+
+  function drawObstacle(o) {
+    ctx.save();
+    ctx.translate(o.x + o.w / 2, o.y + o.h / 2);
+    if (o.type === 'defect') {
+      // red gear-like defect
+      ctx.fillStyle = '#ff6b6b';
+      ctx.beginPath();
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2;
+        const r = (k % 2 === 0) ? o.w / 2 : o.w / 2 - 6;
+        ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#ff4757'; ctx.lineWidth = 3; ctx.stroke();
+      // x mark
+      ctx.strokeStyle = '#0b0d12'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(-8, -8); ctx.lineTo(8, 8); ctx.moveTo(8, -8); ctx.lineTo(-8, 8); ctx.stroke();
+    } else {
+      // barrier block
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(-o.w / 2, -o.h / 2, o.w, o.h);
+      ctx.strokeStyle = '#27ae60'; ctx.lineWidth = 3; ctx.strokeRect(-o.w / 2 + 1, -o.h / 2 + 1, o.w - 2, o.h - 2);
+    }
+    ctx.restore();
+  }
+
+  function drawChip(c) {
+    ctx.save();
+    ctx.translate(c.x + c.w / 2, c.y + c.h / 2);
+    ctx.fillStyle = '#ffd93d';
+    ctx.beginPath(); ctx.moveTo(0, -c.h / 2); ctx.lineTo(c.w / 2, 0); ctx.lineTo(0, c.h / 2); ctx.lineTo(-c.w / 2, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#f4c430'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, 3, 3);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawFloor();
+    drawGrid();
+    for (const o of obstacles) drawObstacle(o);
+    for (const c of chips) drawChip(c);
+    drawPlayer();
+    drawParticles();
+
+    // scanline overlay
+    ctx.fillStyle = 'rgba(0,0,0,0.09)';
+    for (let y = 0; y < canvas.height; y += 4) {
+      ctx.fillRect(0, (y + (frame * 2) % 4) - 0.5, canvas.width, 1);
+    }
+  }
+
+  function loop() {
+    update();
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- Start / restart ----------
+  function startGame() {
+    overlay.classList.remove('show');
+    reset();
+    running = true;
+    updateHud();
+  }
+
+  btnRestart.addEventListener('click', () => startGame());
+  // Space on overlay also starts
+  window.addEventListener('keydown', e => {
+    if (!running && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); startGame(); }
+  });
+
+  // Handle visibility
+  window.addEventListener('blur', () => { touchLeft = touchRight = touchJump = false; });
+
+  reset();
+  loop();
+})();
+</script>
+
+</body>
+</html>
