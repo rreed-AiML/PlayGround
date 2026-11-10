@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_dashboard"
+            android:icon="@drawable/ic_dashboard"
+            android:title="@string/nav_dashboard" />
+        <item
+            android:id="@+id/nav_phone"
+            android:icon="@drawable/ic_phone"
+            android:title="@string/nav_phone" />
+        <item
+            android:id="@+id/nav_macros"
+            android:icon="@drawable/ic_macro"
+            android:title="@string/nav_macros" />
+        <item
+            android:id="@+id/nav_scripts"
+            android:icon="@drawable/ic_script"
+            android:title="@string/nav_scripts" />
+        <item
+            android:id="@+id/nav_recognition"
+            android:icon="@drawable/ic_recognition"
+            android:title="@string/nav_recognition" />
+        <item
+            android:id="@+id/nav_keyboard"
+            android:icon="@drawable/ic_keyboard"
+            android:title="@string/nav_keyboard" />
+        <item
+            android:id="@+id/nav_clipboard"
+            android:icon="@drawable/ic_clipboard"
+            android:title="@string/nav_clipboard" />
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/nav_settings" />
+    </group>
+</menu>

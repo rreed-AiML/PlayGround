@@ -1,0 +1,17 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.Automa" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/automa_primary</item>
+        <item name="colorPrimaryVariant">@color/automa_primary_dark</item>
+        <item name="colorSecondary">@color/automa_accent</item>
+        <item name="android:colorBackground">@color/automa_background</item>
+        <item name="colorSurface">@color/automa_surface</item>
+        <item name="colorOnPrimary">@color/automa_text</item>
+        <item name="colorOnSecondary">@color/automa_text</item>
+        <item name="colorOnSurface">@color/automa_text</item>
+        <item name="colorOnBackground">@color/automa_text</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="android:statusBarColor" tools:targetApi="lollipop">@color/automa_background</item>
+        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/automa_background</item>
+    </style>
+</resources>

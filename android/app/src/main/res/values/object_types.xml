@@ -1,0 +1,9 @@
+<resources>
+    <string-array name="object_types">
+        <item>All objects</item>
+        <item>Button</item>
+        <item>Icon</item>
+        <item>Text field</item>
+        <item>Image</item>
+    </string-array>
+</resources>

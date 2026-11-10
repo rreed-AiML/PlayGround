@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="http://schemas.android.com/tools">
+    <string-array name="kb_layouts">
+        <item>English (QWERTY)</item>
+        <item>Symbols</item>
+        <item>Numeric</item>
+    </string-array>
+    <string-array name="object_types">
+        <item>All objects</item>
+        <item>Button</item>
+        <item>Icon</item>
+        <item>Text field</item>
+        <item>Image</item>
+    </string-array>
+    <string-array name="script_templates">
+        <item>Load template…</item>
+        <item>Calculator: 2+2</item>
+        <item>Open Settings &amp; toggle Wi-Fi</item>
+        <item>Fill Notes &amp; save</item>
+    </string-array>
+    <color name="automa_accent">#06B6D4</color>
+    <color name="automa_background">#0B0F14</color>
+    <color name="automa_border">#243040</color>
+    <color name="automa_danger">#EF4444</color>
+    <color name="automa_ok">#22C55E</color>
+    <color name="automa_overlay_bg">#8A1C1C</color>
+    <color name="automa_primary">#7C3AED</color>
+    <color name="automa_primary_dark">#6D28D9</color>
+    <color name="automa_surface">#121A24</color>
+    <color name="automa_text">#E8EEF6</color>
+    <color name="automa_text_muted">#94A3B8</color>
+    <color name="automa_warn">#F59E0B</color>
+    <dimen name="key_corner_radius">8dp</dimen>
+    <dimen name="key_height_portrait">56dp</dimen>
+    <dimen name="key_margin">4dp</dimen>
+    <dimen name="key_width_space">30%</dimen>
+    <dimen name="key_width_standard">10%</dimen>
+    <dimen name="key_width_wide">20%</dimen>
+    <string name="accessibility_service_description">Automa input automation service. Enables macro recording, playback, and window-level input control across apps.</string>
+    <string name="action_play">Play</string>
+    <string name="action_record">Record</string>
+    <string name="action_stop">Stop</string>
+    <string name="app_name">Automa</string>
+    <string name="label_accessibility">Accessibility automation</string>
+    <string name="label_keyboard">Custom keyboard (IME)</string>
+    <string name="label_mic">Microphone / voice</string>
+    <string name="label_overlay">Draw on top</string>
+    <string name="nav_clipboard">Clipboard</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_keyboard">Keyboard</string>
+    <string name="nav_macros">Macros</string>
+    <string name="nav_phone">Phone Screen</string>
+    <string name="nav_recognition">Recognition</string>
+    <string name="nav_scripts">Scripts</string>
+    <string name="nav_settings">Settings</string>
+    <string name="permission_accessibility_message">Enable the Automa accessibility service to record and replay input across applications.</string>
+    <string name="permission_accessibility_title">Accessibility service</string>
+    <string name="permission_mic_message">Automa uses the microphone for voice input on the custom keyboard.</string>
+    <string name="permission_mic_title">Microphone</string>
+    <string name="permission_overlay_message">Automa needs to draw an annotation overlay on top of other windows.</string>
+    <string name="permission_overlay_title">Draw over other apps</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_recording">Recording…</string>
+    <string name="toast_exported">Exported</string>
+    <string name="toast_imported">Imported</string>
+    <string name="toast_no_macro">No macro selected</string>
+    <string name="toast_playback_finished">Playback finished</string>
+    <string name="toast_playback_started">Playing macro</string>
+    <string name="toast_recording_started">Recording started</string>
+    <string name="toast_recording_stopped">Recording stopped</string>
+    <string name="toast_saved">Saved</string>
+    <style name="Chip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingHorizontal">8dp</item>
+        <item name="android:paddingVertical">4dp</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+    <style name="Theme.Automa" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/automa_primary</item>
+        <item name="colorPrimaryVariant">@color/automa_primary_dark</item>
+        <item name="colorSecondary">@color/automa_accent</item>
+        <item name="android:colorBackground">@color/automa_background</item>
+        <item name="colorSurface">@color/automa_surface</item>
+        <item name="colorOnPrimary">@color/automa_text</item>
+        <item name="colorOnSecondary">@color/automa_text</item>
+        <item name="colorOnSurface">@color/automa_text</item>
+        <item name="colorOnBackground">@color/automa_text</item>
+        <item name="android:windowLightStatusBar" ns1:targetApi="m">false</item>
+        <item name="android:statusBarColor" ns1:targetApi="lollipop">@color/automa_background</item>
+        <item name="android:navigationBarColor" ns1:targetApi="lollipop">@color/automa_background</item>
+    </style>
+    <declare-styleable name="AutomaKeyboard">
+        <attr format="reference|color" name="keyBackground"/>
+        <attr format="reference|color" name="keyTextColor"/>
+    </declare-styleable>
+</resources>

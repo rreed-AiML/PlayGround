@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automa — Automation Studio</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="shell">
+  <div class="brand">
+    <div class="mark">A</div>
+    <div>Automa<span class="sub">Automation Studio</span></div>
+  </div>
+  <div class="chips" id="chips">
+    <span class="chip chip-on" id="chip-overlay">OVERLAY: off</span>
+    <span class="chip" id="chip-kb">KEYBOARD: hidden</span>
+    <span class="chip" id="chip-clip">CLIPBOARD: 0</span>
+    <span class="chip chip-warn" id="chip-mic">MIC: off</span>
+    <span class="chip chip-ok" id="chip-script">SCRIPT: ready</span>
+  </div>
+  <div class="actions">
+    <button class="btn btn-record" id="btn-record" title="Record macro"><span class="dot"></span> RECORD</button>
+    <button class="btn btn-play" id="btn-play" title="Play macro">▶ PLAY</button>
+    <button class="btn btn-stop" id="btn-stop" style="display:none" title="Stop">⏹ STOP</button>
+  </div>
+</header>
+
+<div class="studio">
+  <aside class="sidebar">
+    <nav class="nav">
+      <button class="nav-item active" data-sec="dashboard">Dashboard</button>
+      <button class="nav-item" data-sec="phone">Phone Screen</button>
+      <button class="nav-item" data-sec="macros">Macros</button>
+      <button class="nav-item" data-sec="scripts">Scripts</button>
+      <button class="nav-item" data-sec="recognition">Recognition</button>
+      <button class="nav-item" data-sec="keyboard">Keyboard</button>
+      <button class="nav-item" data-sec="clipboard">Clipboard</button>
+      <button class="nav-item" data-sec="settings">Settings</button>
+    </nav>
+    <div class="footer-note">Automa v1.0 · Local-first · Offline scripting</div>
+  </aside>
+
+  <main class="panel" id="panel-dashboard">
+    <h2>Automation Dashboard</h2>
+    <p class="muted">Record, script, and replay user actions across applications. Draw on top of any window, control a custom keyboard with voice, and manage a persistent clipboard.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Macro Recorder</h3>
+        <p>Capture clicks, text input, and waits on the simulated phone screen. Macros save, edit, and replay with per-step timing.</p>
+        <button class="btn" onclick="openSection('macros')">Open Macros →</button>
+      </div>
+      <div class="card">
+        <h3>Runtime Scripting</h3>
+        <p>Write internal automation scripts (click, type, wait, repeat, if-found, screenshot, notify) and execute them live.</p>
+        <button class="btn" onclick="openSection('scripts')">Open Scripts →</button>
+      </div>
+      <div class="card">
+        <h3>Recognition &amp; Tracking</h3>
+        <p>Detect text, buttons, icons, and image templates on screen; highlight and track targets across app switches.</p>
+        <button class="btn" onclick="openSection('recognition')">Open Recognition →</button>
+      </div>
+      <div class="card">
+        <h3>Draw on Top</h3>
+        <p>Float an annotation canvas over any application window.</p>
+        <button class="btn" onclick="toggleOverlay()">Toggle Overlay</button>
+      </div>
+    </div>
+    <div class="recent" id="recent">
+      <h3>Recent Macros</h3>
+      <div class="macro-list" id="macro-list">None yet. Record your first macro.</div>
+    </div>
+  </main>
+
+  <main class="panel hidden" id="panel-phone">
+    <div class="phone-toolbar">
+      <button class="btn ghost" onclick="openSection('dashboard')">← Back</button>
+      <span class="phone-title" id="phone-title">Home</span>
+      <div class="phone-right">
+        <button class="btn ghost small" id="btn-kb-toggle" onclick="toggleKeyboard()">Show Keyboard</button>
+        <button class="btn ghost small" onclick="phoneHome()">Home</button>
+      </div>
+    </div>
+    <div class="device-wrap">
+      <div class="device" id="device">
+        <div class="sensor-bar"></div>
+        <div class="screen" id="screen"></div>
+        <div class="nav-bar">
+          <button class="nav-btn" onclick="phoneBack()">Back</button>
+          <button class="nav-btn" onclick="phoneHome()">Home</button>
+          <button class="nav-btn" onclick="phoneRecent()">Recent</button>
+        </div>
+      </div>
+      <canvas id="overlay-canvas" class="overlay-canvas hidden"></canvas>
+      <div class="draw-hud hidden" id="draw-hud">
+        <div class="draw-swatch" id="draw-swatch" style="background:#ff4757" onclick="setDrawColor('#ff4757')"></div>
+        <div class="draw-swatch" style="background:#2ed573" onclick="setDrawColor('#2ed573')"></div>
+        <div class="draw-swatch" style="background:#1e90ff" onclick="setDrawColor('#1e90ff')"></div>
+        <div class="draw-swatch" style="background:#f39c12" onclick="setDrawColor('#f39c12')"></div>
+        <label class="draw-label">Size <span id="draw-size">6</span></label>
+        <input type="range" id="draw-range" min="2" max="40" value="6">
+        <button class="btn ghost small" onclick="clearDraw()">Clear</button>
+        <button class="btn ghost small" onclick="snapDraw()">Snap</button>
+      </div>
+    </div>
+    <div class="phone-hint" id="phone-hint">Tap an app to open it. RECORD captures your taps and typing.</div>
+  </main>
+
+  <main class="panel hidden" id="panel-macros">
+    <div class="page-head">
+      <h2>Macros</h2>
+      <div class="macro-actions">
+        <button class="btn ghost small" onclick="newMacro()">+ New</button>
+        <button class="btn small" onclick="playSelected()">▶ Play Selected</button>
+        <button class="btn small danger" onclick="deleteSelected()">🗑 Delete</button>
+      </div>
+    </div>
+    <div class="macro-table-wrap">
+      <table class="macro-table">
+        <thead><tr><th>Name</th><th>Steps</th><th>Last run</th><th>Actions</th></tr></thead>
+        <tbody id="macro-table-body"></tbody>
+      </table>
+    </div>
+    <div class="editor-card" id="macro-editor" style="display:none">
+      <h3 id="macro-editor-title">Edit Macro</h3>
+      <div class="form-row"><label>Name</label><input type="text" id="edit-macro-name"></div>
+      <div class="form-row"><label>Steps (JSON)</label><textarea id="edit-macro-steps" rows="8"></textarea></div>
+      <div class="form-actions">
+        <button class="btn" onclick="saveMacroEdit()">Save</button>
+        <button class="btn ghost" onclick="hideMacroEditor()">Cancel</button>
+      </div>
+      <div class="step-hint" id="step-hint">Step shape: {"t":"click","target":"Calculator","x":120,"y":200,"ms":300}</div>
+    </div>
+    <div class="empty-state" id="macros-empty">No macros saved.</div>
+  </main>
+
+  <main class="panel hidden" id="panel-scripts">
+    <div class="page-head">
+      <h2>Internal Scripting</h2>
+      <div class="script-actions">
+        <select id="script-template" class="ghost-select">
+          <option>Load template…</option>
+          <option>Calculator: 2+2</option>
+          <option>Open Settings &amp; toggle Wi-Fi</option>
+          <option>Fill Notes &amp; save</option>
+        </select>
+        <button class="btn" onclick="runScript()">▶ Run Script</button>
+        <button class="btn ghost" onclick="clearScript()">Clear</button>
+        <button class="btn small" onclick="saveScript()">💾 Save Script</button>
+      </div>
+    </div>
+    <div class="script-editor-wrap">
+      <textarea id="script-editor" placeholder="Write an internal automation script…"></textarea>
+    </div>
+    <div class="script-doc">
+      <h4>Command reference</h4>
+      <table class="doc-table">
+        <tr><td>`click "Calculator"`</td><td>Tap the element whose text/desc contains "Calculator"</td></tr>
+        <tr><td>`type "hello world"`</td><td>Type text into the focused field</td></tr>
+        <tr><td>`wait 1000`</td><td>Pause 1000 ms</td></tr>
+        <tr><td>`repeat 3 { … }`</td><td>Repeat the block n times</td></tr>
+        <tr><td>`if found "8" { … }`</td><td>Run block only if text "8" is on screen</td></tr>
+        <tr><td>`else { … }`</td><td>Else branch of the last if</td></tr>
+        <tr><td>`notify "Done"`</td><td>Show a toast notification</td></tr>
+        <tr><td>`screenshot`</td><td>Capture the current screen</td></tr>
+        <tr><td>`press back|home|recent`</td><td>Press a system navigation key</td></tr>
+        <tr><td>`// comment`</td><td>Line comment</td></tr>
+      </table>
+    </div>
+    <div id="script-output" class="script-output"></div>
+  </main>
+
+  <main class="panel hidden" id="panel-recognition">
+    <div class="page-head">
+      <h2>Recognition &amp; Tracking</h2>
+      <div class="rec-actions">
+        <input type="text" id="rec-text" placeholder="Find text on screen…">
+        <button class="btn" onclick="recFindText()">Find Text</button>
+        <select id="rec-type"><option>All objects</option><option>Button</option><option>Icon</option><option>Text field</option><option>Image</option></select>
+        <button class="btn" onclick="recFindType()">Detect Objects</button>
+      </div>
+    </div>
+    <div class="rec-grid">
+      <div class="rec-card">
+        <h4>Image / Template match</h4>
+        <p>Upload a small icon/template; matching regions on screen are highlighted.</p>
+        <input type="file" id="rec-image" accept="image/*">
+        <button class="btn small" onclick="recMatchImage()">Match Image</button>
+        <div class="rec-result" id="rec-image-result"></div>
+      </div>
+      <div class="rec-card">
+        <h4>Tracker</h4>
+        <p>Select a target to track it across app windows (highlight follows the element).</p>
+        <select id="rec-track" onchange="recTrack(this.value)"></select>
+        <button class="btn small" id="btn-track-stop" onclick="recTrackStop()" style="display:none">Stop tracking</button>
+        <div class="rec-result" id="rec-track-result"></div>
+      </div>
+    </div>
+    <div class="rec-hint">Detected elements glow on the phone screen. Click a detected element to inspect it.</div>
+  </main>
+
+  <main class="panel hidden" id="panel-keyboard">
+    <div class="page-head">
+      <h2>Custom Keyboard</h2>
+      <p class="muted">On-screen keyboard with microphone (voice) input. Works over the phone screen and any focused field.</p>
+    </div>
+    <div class="kb-preview" id="kb-preview"></div>
+    <div class="kb-controls">
+      <button class="btn" id="btn-kb-mic" onclick="toggleKBMic()" title="Microphone / voice input"><span class="mic-dot"></span> Mic: off</button>
+      <button class="btn ghost small" onclick="insertKbText('@')">Insert @</button>
+      <button class="btn ghost small" onclick="insertKbText('.')">Insert .</button>
+      <button class="btn ghost small" onclick="insertKbText(' ')">Space</button>
+      <button class="btn ghost small" onclick="insertKbText('\n')">Enter</button>
+      <button class="btn ghost small" onclick="insertKbText('\b')">Backspace</button>
+    </div>
+    <div class="kb-lang">
+      <label>Layout</label>
+      <select id="kb-layout" onchange="renderKeyboard()">
+        <option value="en">English (QWERTY)</option>
+        <option value="symbols">Symbols</option>
+        <option value="numeric">Numeric</option>
+      </select>
+    </div>
+    <div class="kb-hint">Mic uses the browser Web Speech API; on a real Android device this maps to SpeechRecognizer.</div>
+  </main>
+
+  <main class="panel hidden" id="panel-clipboard">
+    <div class="page-head">
+      <h2>Custom Clipboard</h2>
+      <p class="muted">Persistent clipboard history with copy/paste across the phone simulator and form fields.</p>
+    </div>
+    <div class="clip-toolbar">
+      <input type="text" id="clip-text" placeholder="Type or paste text…">
+      <button class="btn" onclick="clipCopy()">Copy</button>
+      <button class="btn ghost" onclick="clipPaste()">Paste → field</button>
+      <button class="btn ghost small" onclick="clipClear()">Clear history</button>
+    </div>
+    <div class="clip-list" id="clip-list"></div>
+    <div class="clip-hint">On Android this uses ClipboardManager with a foreground service so copied items survive app switches.</div>
+  </main>
+
+  <main class="panel hidden" id="panel-settings">
+    <div class="page-head"><h2>Settings</h2></div>
+    <div class="settings-list">
+      <div class="setting">
+        <span>Accessibility service (input automation &amp; recording)</span>
+        <label class="switch"><input type="checkbox" id="set-acc"><span class="slider"></span></label>
+      </div>
+      <div class="setting">
+        <span>Draw on top permission (SYSTEM_ALERT_WINDOW)</span>
+        <label class="switch"><input type="checkbox" id="set-overlay" onchange="toggleOverlay()"><span class="slider"></span></label>
+      </div>
+      <div class="setting">
+        <span>Microphone / voice input</span>
+        <label class="switch"><input type="checkbox" id="set-mic"><span class="slider"></span></label>
+      </div>
+      <div class="setting">
+        <span>Custom keyboard as default IME</span>
+        <label class="switch"><input type="checkbox" id="set-kb"><span class="slider"></span></label>
+      </div>
+      <div class="setting">
+        <span>Clipboard history (persistent)</span>
+        <label class="switch"><input type="checkbox" id="set-clip" checked><span class="slider"></span></label>
+      </div>
+      <div class="setting">
+        <span>Theme: Dark</span>
+        <label class="switch"><input type="checkbox" id="set-dark" onchange="toggleDark()"><span class="slider"></span></label>
+      </div>
+    </div>
+    <div class="settings-actions">
+      <button class="btn small" onclick="exportData()">📤 Export data (JSON)</button>
+      <button class="btn small" onclick="importData()">📥 Import data</button>
+      <button class="btn small danger" onclick="resetData()">⚠ Reset all</button>
+    </div>
+  </main>
+</div>
+
+<div class="kb-overlay hidden" id="kb-overlay">
+  <div class="kb-handle" id="kb-handle">⌨</div>
+  <div class="kb-window">
+    <div class="kb-bar">
+      <button class="kb-btn kb-mic" id="kb-mic" title="Voice input"><span class="mic-dot"></span></button>
+      <button class="kb-btn kb-close" onclick="hideKeyboard()">╳</button>
+    </div>
+    <div class="kb-keys" id="kb-keys"></div>
+    <div class="kb-row">
+      <button class="kb-btn kb-wide" onclick="kbShift()">⇧</button>
+      <button class="kb-btn kb-space" onclick="kbSpace()">space</button>
+      <button class="kb-btn kb-wide" onclick="kbEnter()">⏎</button>
+      <button class="kb-btn kb-del" onclick="kbBackspace()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<div class="floating-actions hidden" id="floating-actions">
+  <button class="fab" onclick="toggleDrawMode()">✏ Draw</button>
+  <button class="fab" onclick="hideKeyboard()">⌨ Kbd</button>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

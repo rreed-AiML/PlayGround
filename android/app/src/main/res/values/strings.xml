@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">Automa</string>
+    <string name="accessibility_service_description">Automa input automation service. Enables macro recording, playback, and window-level input control across apps.</string>
+
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_phone">Phone Screen</string>
+    <string name="nav_macros">Macros</string>
+    <string name="nav_scripts">Scripts</string>
+    <string name="nav_recognition">Recognition</string>
+    <string name="nav_keyboard">Keyboard</string>
+    <string name="nav_clipboard">Clipboard</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="action_record">Record</string>
+    <string name="action_play">Play</string>
+    <string name="action_stop">Stop</string>
+    <string name="status_recording">Recording…</string>
+    <string name="status_ready">Ready</string>
+
+    <string name="permission_overlay_title">Draw over other apps</string>
+    <string name="permission_overlay_message">Automa needs to draw an annotation overlay on top of other windows.</string>
+    <string name="permission_accessibility_title">Accessibility service</string>
+    <string name="permission_accessibility_message">Enable the Automa accessibility service to record and replay input across applications.</string>
+    <string name="permission_mic_title">Microphone</string>
+    <string name="permission_mic_message">Automa uses the microphone for voice input on the custom keyboard.</string>
+
+    <string name="toast_recording_started">Recording started</string>
+    <string name="toast_recording_stopped">Recording stopped</string>
+    <string name="toast_playback_started">Playing macro</string>
+    <string name="toast_playback_finished">Playback finished</string>
+    <string name="toast_no_macro">No macro selected</string>
+    <string name="toast_saved">Saved</string>
+    <string name="toast_exported">Exported</string>
+    <string name="toast_imported">Imported</string>
+
+    <string name="label_overlay">Draw on top</string>
+    <string name="label_keyboard">Custom keyboard (IME)</string>
+    <string name="label_mic">Microphone / voice</string>
+    <string name="label_accessibility">Accessibility automation</string>
+</resources>
